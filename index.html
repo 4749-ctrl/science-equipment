@@ -5,85 +5,238 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบยืม-คืนอุปกรณ์วิทยาศาสตร์</title>
     
-    <!-- เพิ่มไลบรารี SweetAlert2 สำหรับแจ้งเตือนแบบสวยงาม -->
+    <!-- ฟอนต์ Prompt จาก Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- SweetAlert2 สำหรับแจ้งเตือนแบบสวยงาม -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
-        .wrapper { max-width: 600px; width: 100%; display: flex; flex-direction: column; gap: 20px; }
-        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h2, h3 { text-align: center; color: #333; margin-top: 0; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; color: #666; font-size: 0.9em; font-weight: bold;}
-        input[type="text"], select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-family: inherit;}
-        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        button { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; font-family: inherit; font-size: 1em; transition: 0.3s;}
-        button:hover { opacity: 0.9; transform: translateY(-2px); }
-        .btn-borrow { background-color: #28a745; }
-        .btn-return { background-color: #007bff; }
-        button:disabled { opacity: 0.6; cursor: not-allowed; transform: none;}
+        :root {
+            --primary-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --input-bg: #f1f5f9;
+            --accent-borrow: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --accent-return: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        body { 
+            font-family: 'Prompt', sans-serif; 
+            background: var(--primary-bg); 
+            background-image: radial-gradient(circle at top right, #eef2f3 0%, #f8fafc 100%);
+            margin: 0;
+            padding: 40px 20px;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container { 
+            max-width: 1000px; 
+            width: 100%; 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 30px; 
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                grid-template-columns: 400px 1fr;
+            }
+        }
+
+        .card { 
+            background: var(--card-bg); 
+            padding: 35px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); 
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        h2, h3 { 
+            text-align: left; 
+            color: var(--text-main); 
+            margin-top: 0; 
+            font-weight: 600;
+            margin-bottom: 25px;
+        }
+
+        h2 { font-size: 1.5rem; }
+        h3 { font-size: 1.25rem; border-bottom: 2px solid var(--primary-bg); padding-bottom: 15px; }
+
+        .form-group { margin-bottom: 20px; }
         
-        /* สไตล์สำหรับตาราง */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
-        th, td { border-bottom: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background-color: #f8f9fa; }
-        .loading, .status-msg { text-align: center; margin-top: 15px; font-weight: bold; }
-        .status-msg { color: #ff9800; display: none; }
-        .empty-row { text-align: center; color: #999; }
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            color: var(--text-main); 
+            font-size: 0.95em; 
+            font-weight: 500;
+        }
+
+        input[type="text"], select { 
+            width: 100%; 
+            padding: 14px 16px; 
+            border: 1.5px solid var(--border-color); 
+            border-radius: 12px; 
+            box-sizing: border-box; 
+            font-family: 'Prompt', sans-serif;
+            font-size: 0.95rem;
+            background-color: var(--input-bg);
+            transition: all 0.3s ease;
+            color: var(--text-main);
+        }
+
+        input[type="text"]:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background-color: #fff;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-group { display: flex; gap: 15px; margin-top: 30px; }
+        
+        button { 
+            flex: 1; 
+            padding: 14px; 
+            border: none; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            color: white; 
+            font-weight: 500; 
+            font-family: 'Prompt', sans-serif; 
+            font-size: 1rem; 
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        button:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .btn-borrow { background: var(--accent-borrow); }
+        .btn-return { background: var(--accent-return); }
+        
+        button:disabled { 
+            opacity: 0.7; 
+            cursor: not-allowed; 
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* สไตล์ตารางพรีเมียม */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table { 
+            width: 100%; 
+            border-collapse: separate; 
+            border-spacing: 0;
+            margin-top: 10px; 
+            font-size: 0.95em; 
+        }
+        
+        th, td { 
+            padding: 16px 12px; 
+            text-align: left; 
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th { 
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+
+        td b { color: var(--text-main); font-weight: 500; }
+        td span.student-name { color: var(--text-muted); font-size: 0.9em; display: block; margin-top: 4px; }
+        
+        tbody tr { transition: background-color 0.2s; }
+        tbody tr:hover { background-color: var(--primary-bg); }
+
+        .loading, .status-msg { 
+            text-align: center; 
+            margin-top: 20px; 
+            font-weight: 500; 
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        
+        .status-msg { color: #f59e0b; display: none; }
+        .empty-row { text-align: center; color: var(--text-muted); padding: 40px !important; }
     </style>
 </head>
 <body>
 
-<div class="wrapper">
-    <!-- กล่องฟอร์มยืม-คืน -->
+<div class="container">
+    <!-- ฝั่งซ้าย: ฟอร์มยืม-คืน -->
     <div class="card">
-        <h2>🔬 ระบบยืม-คืนอุปกรณ์วิทย์</h2>
+        <h2>🔬 จัดการยืม-คืนอุปกรณ์</h2>
+        
         <div class="form-group">
             <label>รหัสนักเรียน</label>
-            <input type="text" id="studentId" placeholder="เช่น 12345" required>
+            <input type="text" id="studentId" placeholder="ระบุรหัสนักเรียน 5 หลัก" required autocomplete="off">
         </div>
+        
         <div class="form-group">
-            <label>ชื่อ-นามสกุล (กรอกเมื่อยืม)</label>
-            <input type="text" id="name" placeholder="ชื่อ นามสกุล">
+            <label>ชื่อ-นามสกุล <span style="color:var(--text-muted); font-weight:300; font-size:0.85em;">(เฉพาะตอนยืม)</span></label>
+            <input type="text" id="name" placeholder="นาย/นางสาว..." autocomplete="off">
         </div>
+        
         <div class="form-group">
-            <label>อุปกรณ์</label>
+            <label>เลือกอุปกรณ์</label>
             <select id="equipment">
-                <option value="กล้องจุลทรรศน์">กล้องจุลทรรศน์</option>
-                <option value="บีกเกอร์ 250ml">บีกเกอร์ 250ml</option>
-                <option value="หลอดทดลอง">หลอดทดลอง</option>
-                <option value="เครื่องชั่งดิจิทัล">เครื่องชั่งดิจิทัล</option>
+                <option value="กล้องจุลทรรศน์">🔬 กล้องจุลทรรศน์</option>
+                <option value="บีกเกอร์ 250ml">🧪 บีกเกอร์ 250ml</option>
+                <option value="หลอดทดลอง">🌡️ หลอดทดลอง</option>
+                <option value="เครื่องชั่งดิจิทัล">⚖️ เครื่องชั่งดิจิทัล</option>
             </select>
         </div>
+        
         <div class="btn-group">
             <button class="btn-borrow" id="btn-borrow" onclick="submitForm('borrow')">ยืมอุปกรณ์</button>
             <button class="btn-return" id="btn-return" onclick="submitForm('return')">คืนอุปกรณ์</button>
         </div>
-        <div id="status-msg" class="status-msg">กำลังประมวลผล...</div>
+        
+        <div id="status-msg" class="status-msg">กำลังประมวลผล โปรดรอสักครู่...</div>
     </div>
 
-    <!-- กล่องแสดงรายการที่กำลังถูกยืม -->
+    <!-- ฝั่งขวา: ตารางแสดงรายการที่กำลังถูกยืม -->
     <div class="card">
-        <h3>📋 รายการอุปกรณ์ที่ยังไม่คืน</h3>
-        <div id="table-loading" class="loading">กำลังโหลดข้อมูล...</div>
-        <table id="borrowed-table" style="display:none;">
-            <thead>
-                <tr>
-                    <th>ผู้ยืม</th>
-                    <th>อุปกรณ์</th>
-                    <th>เวลายืม</th>
-                </tr>
-            </thead>
-            <tbody id="borrowed-list">
-                <!-- ข้อมูลจะถูกดึงมาแสดงตรงนี้ -->
-            </tbody>
-        </table>
+        <h3>📋 อุปกรณ์ที่ยังไม่ได้รับคืน</h3>
+        <div id="table-loading" class="loading">กำลังดึงข้อมูล...</div>
+        
+        <div class="table-container">
+            <table id="borrowed-table" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>ข้อมูลผู้ยืม</th>
+                        <th>อุปกรณ์</th>
+                        <th>วันและเวลา</th>
+                    </tr>
+                </thead>
+                <tbody id="borrowed-list">
+                    <!-- ข้อมูลจะถูกดึงมาแสดงตรงนี้ -->
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <script>
     // === นำ URL ของ Web App จาก Google Apps Script มาใส่ตรงนี้ ===
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbxBebK9zO8Z-wnNcmJhTIjKLDj0qlBKu1P9bYawUTtMndWAMFBKml42s1bWYsSaHXPb/exec'; 
+    const scriptURL = 'YOUR_WEB_APP_URL_HERE'; 
 
     window.onload = loadBorrowedItems;
 
@@ -92,16 +245,14 @@
         const name = document.getElementById('name').value;
         const equipment = document.getElementById('equipment').value;
 
-        // เปลี่ยนการแจ้งเตือนตอนกรอกข้อมูลไม่ครบให้ดูสวยงาม
         if (!studentId) {
-            return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณากรอกรหัสนักเรียน' });
+            return Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณาระบุรหัสนักเรียนก่อนทำรายการ', confirmButtonColor: '#3b82f6' });
         }
         if (action === 'borrow' && !name) {
-            return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณากรอกชื่อ-นามสกุล' });
+            return Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณาระบุชื่อ-นามสกุลสำหรับการยืม', confirmButtonColor: '#3b82f6' });
         }
 
         toggleUI(true);
-        document.getElementById('status-msg').innerText = "กำลังประมวลผล...";
 
         let formData = new URLSearchParams();
         formData.append('action', action);
@@ -114,24 +265,22 @@
         .then(result => {
             toggleUI(false);
             if (result === 'Success') {
-                // แจ้งเตือนเมื่อสำเร็จ
                 Swal.fire({
                     icon: 'success',
-                    title: 'สำเร็จ!',
-                    text: action === 'borrow' ? 'บันทึกการยืมเรียบร้อยแล้ว' : 'บันทึกการคืนเรียบร้อยแล้ว',
-                    confirmButtonColor: '#28a745'
+                    title: 'ทำรายการสำเร็จ',
+                    text: action === 'borrow' ? 'บันทึกข้อมูลการยืมเข้าสู่ระบบแล้ว' : 'บันทึกการรับคืนอุปกรณ์เรียบร้อยแล้ว',
+                    confirmButtonColor: '#10b981'
                 });
                 
                 document.getElementById('studentId').value = '';
                 document.getElementById('name').value = '';
                 loadBorrowedItems(); 
             } else {
-                // แจ้งเตือนเมื่อหาข้อมูลไม่เจอ
                 Swal.fire({
                     icon: 'error',
-                    title: 'ผิดพลาด',
-                    text: 'ไม่พบข้อมูลการยืมของนักเรียนคนนี้ หรือคุณคืนอุปกรณ์ไปแล้ว',
-                    confirmButtonColor: '#d33'
+                    title: 'ไม่พบรายการ',
+                    text: 'ไม่พบข้อมูลการยืมของนักเรียนคนนี้ หรือมีการรับคืนไปก่อนหน้านี้แล้ว',
+                    confirmButtonColor: '#ef4444'
                 });
             }
         })
@@ -139,8 +288,9 @@
             toggleUI(false);
             Swal.fire({
                 icon: 'error',
-                title: 'เกิดข้อผิดพลาด',
-                text: 'ไม่สามารถเชื่อมต่อกับระบบได้ กรุณาลองใหม่อีกครั้ง'
+                title: 'ข้อผิดพลาดเครือข่าย',
+                text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง',
+                confirmButtonColor: '#ef4444'
             });
         });
     }
@@ -156,13 +306,13 @@
             tbody.innerHTML = ''; 
 
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="empty-row">ไม่มีอุปกรณ์ที่ถูกยืมอยู่</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="empty-row">ยอดเยี่ยม! ขณะนี้ไม่มีอุปกรณ์ค้างชำรุดหรือถูกยืม</td></tr>';
             } else {
                 data.forEach(item => {
                     let row = `<tr>
-                        <td><b>${item.studentId}</b><br>${item.name}</td>
+                        <td><b>${item.studentId}</b><span class="student-name">${item.name}</span></td>
                         <td>${item.equipment}</td>
-                        <td>${item.date}</td>
+                        <td style="color:var(--text-muted); font-size:0.9em;">${item.date}</td>
                     </tr>`;
                     tbody.innerHTML += row;
                 });
@@ -172,7 +322,7 @@
             document.getElementById('borrowed-table').style.display = 'table';
         })
         .catch(err => {
-            document.getElementById('table-loading').innerText = 'โหลดข้อมูลล้มเหลว';
+            document.getElementById('table-loading').innerText = 'ไม่สามารถดึงข้อมูลรายการได้ในขณะนี้';
         });
     }
 
