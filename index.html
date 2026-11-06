@@ -3,24 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบยืม-คืนอุปกรณ์วิทยาศาสตร์</title>
+    <title>ระบบยืม-คืนอุปกรณ์วิทยาศาสตร์ | RBAC</title>
     
     <!-- ฟอนต์ Prompt จาก Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- SweetAlert2 สำหรับแจ้งเตือนแบบสวยงาม -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         :root {
-            /* โทนสีสดใส (Vibrant) */
             --bg-gradient: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            --card-bg: rgba(255, 255, 255, 0.85); /* กระจกใส Glassmorphism */
+            --card-bg: rgba(255, 255, 255, 0.9);
             --text-main: #2d3748;
             --text-muted: #718096;
-            --input-bg: #ffffff;
             --accent-borrow: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);
             --accent-return: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         }
@@ -28,228 +22,115 @@
         body { 
             font-family: 'Prompt', sans-serif; 
             background: var(--bg-gradient); 
-            margin: 0;
-            padding: 40px 20px;
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center; /* ให้อยู่กึ่งกลางจอ */
-            overflow-x: hidden;
+            margin: 0; padding: 40px 20px; color: var(--text-main);
+            min-height: 100vh; display: flex; justify-content: center; align-items: center; overflow-x: hidden;
         }
 
-        /* --- แอนิเมชันตัวการ์ตูนขยับขึ้นลง --- */
-        @keyframes float {
-            0% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(3deg); }
-            100% { transform: translateY(0px) rotate(0deg); }
+        /* ปุ่ม Admin มุมขวาบน */
+        .admin-btn {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.8); border: none; padding: 10px 15px;
+            border-radius: 20px; cursor: pointer; font-family: inherit; font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s; z-index: 10;
         }
-
-        .cartoon {
-            position: fixed;
-            width: 25vw;
-            max-width: 280px;
-            min-width: 150px;
-            z-index: 0;
-            pointer-events: none; /* ไม่ให้บังการคลิก */
-            animation: float 4s ease-in-out infinite;
-            filter: drop-shadow(0 15px 15px rgba(0,0,0,0.2));
-        }
-
-        .cartoon-left {
-            bottom: -20px;
-            left: -30px;
-        }
-
-        .cartoon-right {
-            bottom: 20px;
-            right: -30px;
-            animation-delay: 2s; /* ให้ขยับสลับจังหวะกัน */
-            transform: scaleX(-1); /* กลับด้านรูปภาพ */
-        }
+        .admin-btn:hover { background: #fff; transform: translateY(-2px); }
 
         .container { 
-            max-width: 1000px; 
-            width: 100%; 
-            display: grid; 
-            grid-template-columns: 1fr; 
-            gap: 30px; 
-            position: relative;
-            z-index: 1; /* ให้อยู่หน้าตัวการ์ตูน */
+            max-width: 1100px; width: 100%; display: grid; grid-template-columns: 1fr; gap: 30px; position: relative; z-index: 1;
         }
+        @media (min-width: 800px) { .container { grid-template-columns: 420px 1fr; } }
 
-        @media (min-width: 768px) {
-            .container {
-                grid-template-columns: 400px 1fr;
-            }
-        }
-
-        /* ตกแต่งกล่องให้ออกแนวโค้งมน น่ารัก และเป็นกระจกใส */
         .card { 
-            background: var(--card-bg); 
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 40px; 
-            border-radius: 30px; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1); 
-            border: 2px solid rgba(255,255,255,0.6);
+            background: var(--card-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            padding: 35px; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); border: 2px solid rgba(255,255,255,0.6);
         }
 
-        h2, h3 { 
-            text-align: center; 
-            color: var(--text-main); 
-            margin-top: 0; 
-            font-weight: 700;
-            margin-bottom: 25px;
-            text-shadow: 1px 1px 0px #fff;
-        }
-
+        h2, h3 { text-align: center; font-weight: 700; margin-top: 0; margin-bottom: 25px; }
         h2 { font-size: 1.6rem; color: #ff5e62; }
         h3 { font-size: 1.3rem; color: #4facfe; border-bottom: 3px dashed #cbd5e0; padding-bottom: 15px; }
 
-        .form-group { margin-bottom: 20px; }
-        
-        label { 
-            display: block; 
-            margin-bottom: 8px; 
-            color: var(--text-main); 
-            font-size: 1em; 
-            font-weight: 600;
-        }
-
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.95rem; }
         input[type="text"], select { 
-            width: 100%; 
-            padding: 15px 20px; 
-            border: 2px solid transparent; 
-            border-radius: 15px; 
-            box-sizing: border-box; 
-            font-family: 'Prompt', sans-serif;
-            font-size: 1rem;
-            background-color: var(--input-bg);
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
-            color: var(--text-main);
+            width: 100%; padding: 14px 18px; border: 2px solid transparent; border-radius: 15px; 
+            font-family: inherit; font-size: 1rem; background-color: #fff; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+            transition: 0.3s;
         }
+        input[type="text"]:focus, select:focus { outline: none; border-color: #4facfe; box-shadow: 0 0 0 4px rgba(79, 172, 254, 0.3); }
 
-        input[type="text"]:focus, select:focus {
-            outline: none;
-            border-color: #4facfe;
-            box-shadow: 0 0 0 5px rgba(79, 172, 254, 0.3);
-            transform: translateY(-2px);
+        .btn-group { display: flex; gap: 10px; margin-top: 25px; }
+        button.action-btn { 
+            flex: 1; padding: 14px; border: none; border-radius: 15px; cursor: pointer; 
+            color: white; font-weight: 600; font-family: inherit; font-size: 1.05rem; 
+            transition: 0.3s; box-shadow: 0 8px 15px rgba(0,0,0,0.15);
         }
-
-        .btn-group { display: flex; gap: 15px; margin-top: 30px; }
-        
-        button { 
-            flex: 1; 
-            padding: 15px; 
-            border: none; 
-            border-radius: 15px; 
-            cursor: pointer; 
-            color: white; 
-            font-weight: 600; 
-            font-family: 'Prompt', sans-serif; 
-            font-size: 1.1rem; 
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-        }
-        
-        button:hover { 
-            transform: translateY(-5px) scale(1.02); 
-            box-shadow: 0 12px 25px rgba(0,0,0,0.2);
-        }
-
+        button.action-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
         .btn-borrow { background: var(--accent-borrow); }
         .btn-return { background: var(--accent-return); }
-        
-        button:disabled { 
-            opacity: 0.6; 
-            cursor: not-allowed; 
-            transform: none;
-            box-shadow: none;
-        }
-        
-        /* สไตล์ตารางสุดคิวท์ */
-        .table-container {
-            overflow-x: auto;
-            border-radius: 15px;
-        }
 
-        table { 
-            width: 100%; 
-            border-collapse: separate; 
-            border-spacing: 0 8px; /* เว้นระยะห่างแต่ละแถว */
-            margin-top: 10px; 
-            font-size: 0.95em; 
+        /* ตารางและแท็บ */
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; }
+        .tab-btn { 
+            padding: 8px 20px; border: none; border-radius: 20px; font-family: inherit; 
+            font-weight: 600; cursor: pointer; background: #e2e8f0; color: var(--text-muted); transition: 0.3s;
         }
-        
-        th, td { 
-            padding: 16px 15px; 
-            text-align: left; 
-        }
-        
-        th { 
-            color: var(--text-muted);
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.9em;
-            letter-spacing: 0.5px;
-            border-bottom: none;
-        }
+        .tab-btn.active { background: #4facfe; color: white; box-shadow: 0 4px 10px rgba(79, 172, 254, 0.4); }
 
-        /* แต่งแถวตารางให้เป็นกล่องๆ */
-        tbody tr { 
-            background: #ffffff;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-            transition: transform 0.2s; 
-        }
-        
-        tbody tr:hover { 
-            transform: scale(1.01);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.05);
-        }
+        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; font-size: 0.9em; }
+        th, td { padding: 14px 12px; text-align: left; }
+        th { color: var(--text-muted); font-weight: 600; font-size: 0.9em; }
+        tbody tr { background: #fff; box-shadow: 0 3px 6px rgba(0,0,0,0.02); transition: 0.2s; }
+        tbody tr:hover { transform: scale(1.01); }
+        td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+        td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
 
-        /* โค้งมนเฉพาะมุมซ้ายขวาของแต่ละแถว */
-        tbody tr td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
-        tbody tr td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+        .badge { padding: 5px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+        .badge-pending { background: #fef3c7; color: #d97706; }
+        .badge-active { background: #d1fae5; color: #059669; }
 
-        td b { color: var(--text-main); font-weight: 600; font-size: 1.05em; }
-        td span.student-name { color: var(--text-muted); font-size: 0.9em; display: block; margin-top: 2px; }
-        
-        .loading, .status-msg { 
-            text-align: center; 
-            margin-top: 20px; 
-            font-weight: 600; 
-            color: #ff5e62;
+        /* ปุ่มจัดการของ Admin ในตาราง */
+        .admin-controls { display: none; gap: 5px; margin-top: 5px; }
+        .admin-controls button { 
+            padding: 5px 10px; border: none; border-radius: 8px; font-size: 0.8em; cursor: pointer; font-family: inherit; font-weight: 600; color: white;
         }
+        .btn-approve { background: #10b981; }
+        .btn-reject { background: #ef4444; }
         
-        .status-msg { display: none; }
-        .empty-row { text-align: center; color: var(--text-muted); padding: 50px !important; background: transparent !important; box-shadow: none !important;}
+        .loading { text-align: center; color: #ff5e62; font-weight: 600; margin-top: 15px;}
     </style>
 </head>
 <body>
 
-<!-- ตัวการ์ตูนตกแต่งด้านข้าง (ใช้รูปจาก CDN ฟรีที่น่ารักๆ) -->
-<img src="https://cdn-icons-png.flaticon.com/512/2932/2932549.png" alt="cartoon" class="cartoon cartoon-left">
-<img src="https://cdn-icons-png.flaticon.com/512/2932/2932539.png" alt="cartoon" class="cartoon cartoon-right">
+<button class="admin-btn" onclick="loginAdmin()">🔑 ผู้ดูแลระบบ</button>
+
+<!-- ตัวการ์ตูนตกแต่ง -->
+<img src="https://cdn-icons-png.flaticon.com/512/2932/2932549.png" style="position:fixed; width:200px; bottom:20px; left:20px; z-index:0; animation: float 3s infinite alternate;" alt="cartoon">
 
 <div class="container">
-    <!-- ฝั่งซ้าย: ฟอร์มยืม-คืน -->
+    <!-- กล่องฟอร์ม -->
     <div class="card">
-        <h2>✨ ยืม-คืนอุปกรณ์วิทย์ ✨</h2>
+        <h2>✨ ส่งคำขอยืม-คืน ✨</h2>
         
         <div class="form-group">
-            <label>รหัสนักเรียน 🏫</label>
-            <input type="text" id="studentId" placeholder="ระบุรหัสนักเรียน 5 หลัก" required autocomplete="off">
+            <label>สถานะผู้ใช้งาน 👤</label>
+            <select id="role">
+                <option value="นักเรียน">👨‍🎓 นักเรียน</option>
+                <option value="คุณครู">👨‍🏫 คุณครู</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>รหัสประจำตัว 🏫</label>
+            <input type="text" id="studentId" placeholder="ระบุรหัส 5 หลัก / รหัสครู" required>
         </div>
         
         <div class="form-group">
-            <label>ชื่อ-นามสกุล 📝 <span style="color:var(--text-muted); font-weight:400; font-size:0.85em;">(เฉพาะตอนยืม)</span></label>
-            <input type="text" id="name" placeholder="นาย/นางสาว..." autocomplete="off">
+            <label>ชื่อ-นามสกุล 📝 <span style="font-size:0.85em; font-weight:400; color:#718096;">(เฉพาะยืม)</span></label>
+            <input type="text" id="name" placeholder="ระบุชื่อ-นามสกุล">
         </div>
         
         <div class="form-group">
-            <label>เลือกอุปกรณ์ 🔬</label>
+            <label>อุปกรณ์ 🔬</label>
             <select id="equipment">
                 <option value="กล้องจุลทรรศน์">🔬 กล้องจุลทรรศน์</option>
                 <option value="บีกเกอร์ 250ml">🧪 บีกเกอร์ 250ml</option>
@@ -259,131 +140,174 @@
         </div>
         
         <div class="btn-group">
-            <button class="btn-borrow" id="btn-borrow" onclick="submitForm('borrow')">ยืมอุปกรณ์</button>
-            <button class="btn-return" id="btn-return" onclick="submitForm('return')">คืนอุปกรณ์</button>
+            <button class="action-btn btn-borrow" onclick="submitForm('borrow')">ขอยืมอุปกรณ์</button>
+            <button class="action-btn btn-return" onclick="submitForm('return')">คืนอุปกรณ์</button>
         </div>
-        
-        <div id="status-msg" class="status-msg">🚀 กำลังประมวลผล โปรดรอสักครู่...</div>
     </div>
 
-    <!-- ฝั่งขวา: ตารางแสดงรายการที่กำลังถูกยืม -->
+    <!-- กล่องตาราง -->
     <div class="card">
-        <h3>📋 อุปกรณ์ที่ยังไม่ได้รับคืน</h3>
-        <div id="table-loading" class="loading">กำลังดึงข้อมูล... ⏳</div>
+        <h3>📋 สถานะอุปกรณ์</h3>
         
-        <div class="table-container">
+        <div class="tabs">
+            <button class="tab-btn active" id="tab-active" onclick="switchTab('active')">กำลังยืม</button>
+            <button class="tab-btn" id="tab-pending" onclick="switchTab('pending')">รออนุมัติ</button>
+        </div>
+
+        <div id="table-loading" class="loading">กำลังโหลดข้อมูล... ⏳</div>
+        
+        <div style="overflow-x: auto;">
             <table id="borrowed-table" style="display:none;">
                 <thead>
                     <tr>
-                        <th>ข้อมูลผู้ยืม</th>
+                        <th>ผู้ทำรายการ</th>
                         <th>อุปกรณ์</th>
-                        <th>วันและเวลา</th>
+                        <th>สถานะ</th>
                     </tr>
                 </thead>
-                <tbody id="borrowed-list">
-                    <!-- ข้อมูลจะถูกดึงมาแสดงตรงนี้ -->
-                </tbody>
+                <tbody id="borrowed-list"></tbody>
             </table>
         </div>
     </div>
 </div>
 
 <script>
-    // === นำ URL ของ Web App จาก Google Apps Script มาใส่ตรงนี้ ===
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbydrM6tL4dBHH7-nM4yFE-VTXb5IBeRNBGKZ63GhDZOFT7mV2R48-P5rbjyhUkaNRA/exec'; 
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbz1x_iSOWvi7DzVS8JlPy-VD0b58yfD_QczyeF01lTucrmsQDlLYTzRTqjk7g7kpd7D/exec'; // 📌 ใส่ URL ตรงนี้
+    
+    let allData = [];
+    let currentTab = 'active';
+    let adminPin = null; // เก็บ PIN ชั่วคราวเมื่อล็อกอินผ่าน
 
-    window.onload = loadBorrowedItems;
+    window.onload = loadData;
 
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById('tab-active').className = tab === 'active' ? 'tab-btn active' : 'tab-btn';
+        document.getElementById('tab-pending').className = tab === 'pending' ? 'tab-btn active' : 'tab-btn';
+        renderTable();
+    }
+
+    // ฟังก์ชันจัดการฟอร์ม (ยืม/คืน)
     function submitForm(action) {
+        const role = document.getElementById('role').value;
         const studentId = document.getElementById('studentId').value;
         const name = document.getElementById('name').value;
         const equipment = document.getElementById('equipment').value;
 
-        if (!studentId) {
-            return Swal.fire({ icon: 'warning', title: 'โอ๊ะโอ!', text: 'อย่าลืมกรอกรหัสนักเรียนนะครับ', confirmButtonColor: '#ffb199', confirmButtonText: 'ตกลง' });
-        }
-        if (action === 'borrow' && !name) {
-            return Swal.fire({ icon: 'warning', title: 'โอ๊ะโอ!', text: 'อย่าลืมบอกชื่อ-นามสกุลด้วยน้า', confirmButtonColor: '#ffb199', confirmButtonText: 'ตกลง' });
-        }
+        if (!studentId) return Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัสประจำตัว', 'warning');
+        if (action === 'borrow' && !name) return Swal.fire('แจ้งเตือน', 'กรุณากรอกชื่อ-นามสกุล', 'warning');
 
-        toggleUI(true);
+        Swal.fire({ title: 'กำลังประมวลผล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
         let formData = new URLSearchParams();
-        formData.append('action', action);
-        formData.append('studentId', studentId);
-        formData.append('name', name);
+        formData.append('action', action); formData.append('role', role);
+        formData.append('studentId', studentId); formData.append('name', name);
         formData.append('equipment', equipment);
 
-        fetch(scriptURL, { method: 'POST', body: formData, headers: { 'Content-Type': 'application/x-www-form-urlencoded' }})
+        fetch(scriptURL, { method: 'POST', body: formData })
         .then(res => res.text())
         .then(result => {
-            toggleUI(false);
-            if (result === 'Success') {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'เย้! สำเร็จแล้ว 🎉',
-                    text: action === 'borrow' ? 'บันทึกการยืมเรียบร้อย ดูแลอุปกรณ์ดีๆ น้า' : 'ขอบคุณที่นำอุปกรณ์มาคืนครับ!',
-                    confirmButtonColor: '#84fab0'
-                });
-                
-                document.getElementById('studentId').value = '';
-                document.getElementById('name').value = '';
-                loadBorrowedItems(); 
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'หาไม่เจอ 😢',
-                    text: 'ไม่พบข้อมูลการยืม หรือมีการรับคืนไปก่อนหน้านี้แล้วครับ',
-                    confirmButtonColor: '#ff0844'
-                });
+            if (result === 'Success_Pending') {
+                Swal.fire('ส่งคำขอสำเร็จ!', 'คำขอยืมของคุณอยู่ในสถานะ "รออนุมัติ" กรุณารอครูผู้ดูแลอนุมัติ', 'success');
+            } else if (result === 'Success_Return') {
+                Swal.fire('คืนสำเร็จ!', 'รับคืนอุปกรณ์เรียบร้อยแล้ว ขอบคุณครับ', 'success');
+            } else if (result === 'Not_Found') {
+                Swal.fire('ไม่พบข้อมูล', 'ไม่พบอุปกรณ์ที่คุณกำลังยืมอยู่ หรือคืนไปแล้ว', 'error');
             }
-        })
-        .catch(err => {
-            toggleUI(false);
-            Swal.fire({
-                icon: 'error',
-                title: 'ข้อผิดพลาดเครือข่าย',
-                text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ ลองใหม่อีกครั้งนะ',
-                confirmButtonColor: '#ff0844'
-            });
-        });
+            loadData();
+        }).catch(() => Swal.fire('ผิดพลาด', 'ติดต่อเซิร์ฟเวอร์ไม่ได้', 'error'));
     }
 
-    function loadBorrowedItems() {
+    // โหลดข้อมูลทั้งหมด
+    function loadData() {
         document.getElementById('table-loading').style.display = 'block';
         document.getElementById('borrowed-table').style.display = 'none';
 
-        fetch(scriptURL)
-        .then(res => res.json())
-        .then(data => {
-            const tbody = document.getElementById('borrowed-list');
-            tbody.innerHTML = ''; 
-
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="empty-row">🌟 ยอดเยี่ยม! คืนครบทุกชิ้นแล้ว 🌟</td></tr>';
-            } else {
-                data.forEach(item => {
-                    let row = `<tr>
-                        <td><b>${item.studentId}</b><span class="student-name">${item.name}</span></td>
-                        <td style="color:#ff5e62; font-weight:500;">${item.equipment}</td>
-                        <td style="color:var(--text-muted); font-size:0.85em;">${item.date}</td>
-                    </tr>`;
-                    tbody.innerHTML += row;
-                });
-            }
-            
+        fetch(scriptURL).then(res => res.json()).then(data => {
+            allData = data;
+            renderTable();
             document.getElementById('table-loading').style.display = 'none';
             document.getElementById('borrowed-table').style.display = 'table';
-        })
-        .catch(err => {
-            document.getElementById('table-loading').innerText = 'ไม่สามารถดึงข้อมูลรายการได้ในขณะนี้';
         });
     }
 
-    function toggleUI(isProcessing) {
-        document.getElementById('btn-borrow').disabled = isProcessing;
-        document.getElementById('btn-return').disabled = isProcessing;
-        document.getElementById('status-msg').style.display = isProcessing ? 'block' : 'none';
+    // เรนเดอร์ตารางตามแท็บที่เลือก
+    function renderTable() {
+        const tbody = document.getElementById('borrowed-list');
+        tbody.innerHTML = ''; 
+        
+        let filteredData = allData.filter(item => 
+            currentTab === 'active' ? item.status === 'กำลังยืม' : item.status === 'รออนุมัติ'
+        );
+
+        if (filteredData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#999; padding:30px;">ไม่มีข้อมูลในหมวดหมู่นี้</td></tr>`;
+            return;
+        }
+
+        filteredData.forEach(item => {
+            let badgeClass = item.status === 'กำลังยืม' ? 'badge-active' : 'badge-pending';
+            let adminBtns = '';
+            
+            // ถ้าเข้าระบบ Admin และอยู่แท็บรออนุมัติ ให้โชว์ปุ่มอนุมัติ
+            if (adminPin && item.status === 'รออนุมัติ') {
+                adminBtns = `<div class="admin-controls" style="display:flex;">
+                    <button class="btn-approve" onclick="adminAction('${item.txnId}', 'กำลังยืม')">✓ อนุมัติ</button>
+                    <button class="btn-reject" onclick="adminAction('${item.txnId}', 'ไม่อนุมัติ')">✗ ปฏิเสธ</button>
+                </div>`;
+            }
+
+            tbody.innerHTML += `<tr>
+                <td><b>${item.studentId}</b> <span style="font-size:0.85em; color:#666;">(${item.role})</span><br>
+                    <span style="font-size:0.9em; color:#718096;">${item.name}</span></td>
+                <td><span style="color:#ff5e62; font-weight:500;">${item.equipment}</span><br>
+                    <span style="font-size:0.8em; color:#999;">${item.date}</span></td>
+                <td><span class="badge ${badgeClass}">${item.status}</span> ${adminBtns}</td>
+            </tr>`;
+        });
+    }
+
+    // ระบบ Login ผู้ดูแลระบบ (ใช้ SweetAlert ใส่ PIN)
+    function loginAdmin() {
+        if(adminPin) {
+            Swal.fire({ title: 'ออกจากระบบไหม?', icon: 'question', showCancelButton: true })
+            .then(res => { if(res.isConfirmed) { adminPin = null; renderTable(); Swal.fire('ออกจากระบบแล้ว','','success'); }});
+            return;
+        }
+
+        Swal.fire({
+            title: 'ใส่รหัสผ่านผู้ดูแลระบบ',
+            input: 'password',
+            inputAttributes: { autocapitalize: 'off' },
+            showCancelButton: true,
+            confirmButtonText: 'เข้าสู่ระบบ',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                adminPin = result.value;
+                Swal.fire({icon: 'success', title: 'เปิดโหมดผู้ดูแล', text: 'ไปที่แท็บ "รออนุมัติ" เพื่อจัดการคำขอ', timer: 2000, showConfirmButton:false});
+                switchTab('pending');
+            }
+        });
+    }
+
+    // ฟังก์ชันจัดการของ Admin (ยิง POST ส่งสถานะใหม่)
+    function adminAction(txnId, status) {
+        Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
+        let formData = new URLSearchParams();
+        formData.append('action', 'admin_action');
+        formData.append('pin', adminPin);
+        formData.append('txnId', txnId);
+        formData.append('status', status);
+
+        fetch(scriptURL, { method: 'POST', body: formData }).then(res => res.text()).then(result => {
+            if(result === 'Success_Admin') {
+                Swal.fire('สำเร็จ', `อัปเดตเป็น "${status}" แล้ว`, 'success');
+                loadData();
+            } else if (result === 'Invalid_PIN') {
+                adminPin = null; renderTable(); // ล้างรหัสออก
+                Swal.fire('รหัสผ่านผิด', 'กรุณาเข้าสู่ระบบผู้ดูแลใหม่', 'error');
+            }
+        });
     }
 </script>
 
