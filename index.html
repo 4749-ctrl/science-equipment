@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบยืม-คืนอุปกรณ์วิทยาศาสตร์</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
+        .wrapper { max-width: 600px; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h2, h3 { text-align: center; color: #333; margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #666; font-size: 0.9em; }
+        input[type="text"], select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        button { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; }
+        .btn-borrow { background-color: #28a745; }
+        .btn-return { background-color: #007bff; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        /* สไตล์สำหรับตาราง */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
+        th, td { border-bottom: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f8f9fa; }
+        .loading, .status-msg { text-align: center; margin-top: 15px; font-weight: bold; }
+        .status-msg { color: #ff9800; display: none; }
+        .empty-row { text-align: center; color: #999; }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <!-- กล่องฟอร์มยืม-คืน -->
+    <div class="card">
+        <h2>🔬 ระบบยืม-คืนอุปกรณ์วิทย์</h2>
+        <div class="form-group">
+            <label>รหัสนักเรียน</label>
+            <input type="text" id="studentId" placeholder="เช่น 12345" required>
+        </div>
+        <div class="form-group">
+            <label>ชื่อ-นามสกุล (กรอกเมื่อยืม)</label>
+            <input type="text" id="name" placeholder="ชื่อ นามสกุล">
+        </div>
+        <div class="form-group">
+            <label>อุปกรณ์</label>
+            <select id="equipment">
+                <option value="กล้องจุลทรรศน์">กล้องจุลทรรศน์</option>
+                <option value="บีกเกอร์ 250ml">บีกเกอร์ 250ml</option>
+                <option value="หลอดทดลอง">หลอดทดลอง</option>
+                <option value="เครื่องชั่งดิจิทัล">เครื่องชั่งดิจิทัล</option>
+            </select>
+        </div>
+        <div class="btn-group">
+            <button class="btn-borrow" id="btn-borrow" onclick="submitForm('borrow')">ยืมอุปกรณ์</button>
+            <button class="btn-return" id="btn-return" onclick="submitForm('return')">คืนอุปกรณ์</button>
+        </div>
+        <div id="status-msg" class="status-msg">กำลังประมวลผล...</div>
+    </div>
+
+    <!-- กล่องแสดงรายการที่กำลังถูกยืม -->
+    <div class="card">
+        <h3>📋 รายการอุปกรณ์ที่ยังไม่คืน</h3>
+        <div id="table-loading" class="loading">กำลังโหลดข้อมูล...</div>
+        <table id="borrowed-table" style="display:none;">
+            <thead>
+                <tr>
+                    <th>ผู้ยืม</th>
+                    <th>อุปกรณ์</th>
+                    <th>เวลายืม</th>
+                </tr>
+            </thead>
+            <tbody id="borrowed-list">
+                <!-- ข้อมูลจะถูกดึงมาแสดงตรงนี้ -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // === นำ URL ของ Web App จาก Google Apps Script มาใส่ตรงนี้ ===
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwZOBY6tuWd5jajef7cUCSVfknD6vWQ_TQmVhd4SKOB6S6ikX-FOt1jxXn9XRbyBLc/exec'; 
+
+    // ทำงานทันทีเมื่อเปิดหน้าเว็บ เพื่อดึงข้อมูลรายการที่ยืม
+    window.onload = loadBorrowedItems;
+
+    // ฟังก์ชันยืม-คืนอุปกรณ์
+    function submitForm(action) {
+        const studentId = document.getElementById('studentId').value;
+        const name = document.getElementById('name').value;
+        const equipment = document.getElementById('equipment').value;
+
+        if (!studentId) return alert('กรุณากรอกรหัสนักเรียน');
+        if (action === 'borrow' && !name) return alert('กรุณากรอกชื่อ-นามสกุล');
+
+        toggleUI(true);
+        document.getElementById('status-msg').innerText = "กำลังประมวลผล...";
+
+        let formData = new URLSearchParams();
+        formData.append('action', action);
+        formData.append('studentId', studentId);
+        formData.append('name', name);
+        formData.append('equipment', equipment);
+
+        fetch(scriptURL, { method: 'POST', body: formData, headers: { 'Content-Type': 'application/x-www-form-urlencoded' }})
+        .then(res => res.text())
+        .then(result => {
+            toggleUI(false);
+            if (result === 'Success') {
+                alert(action === 'borrow' ? '✅ บันทึกการยืมสำเร็จ!' : '✅ บันทึกการคืนสำเร็จ!');
+                document.getElementById('studentId').value = '';
+                document.getElementById('name').value = '';
+                loadBorrowedItems(); // รีเฟรชตารางอัตโนมัติ
+            } else {
+                alert('❌ ไม่พบข้อมูลการยืม หรือคุณคืนไปแล้ว');
+            }
+        })
+        .catch(err => {
+            toggleUI(false);
+            alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+        });
+    }
+
+    // ฟังก์ชันดึงข้อมูลผู้ที่กำลังยืมอยู่
+    function loadBorrowedItems() {
+        document.getElementById('table-loading').style.display = 'block';
+        document.getElementById('borrowed-table').style.display = 'none';
+
+        fetch(scriptURL)
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.getElementById('borrowed-list');
+            tbody.innerHTML = ''; 
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="empty-row">ไม่มีอุปกรณ์ที่ถูกยืมอยู่</td></tr>';
+            } else {
+                data.forEach(item => {
+                    let row = `<tr>
+                        <td><b>${item.studentId}</b><br>${item.name}</td>
+                        <td>${item.equipment}</td>
+                        <td>${item.date}</td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            }
+            
+            document.getElementById('table-loading').style.display = 'none';
+            document.getElementById('borrowed-table').style.display = 'table';
+        })
+        .catch(err => {
+            document.getElementById('table-loading').innerText = 'โหลดข้อมูลล้มเหลว';
+        });
+    }
+
+    // ฟังก์ชันเปิด-ปิด ปุ่มเพื่อป้องกันการกดซ้ำ
+    function toggleUI(isProcessing) {
+        document.getElementById('btn-borrow').disabled = isProcessing;
+        document.getElementById('btn-return').disabled = isProcessing;
+        document.getElementById('status-msg').style.display = isProcessing ? 'block' : 'none';
+    }
+</script>
+
+</body>
+</html>
