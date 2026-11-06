@@ -4,19 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบยืม-คืนอุปกรณ์วิทยาศาสตร์</title>
+    
+    <!-- เพิ่มไลบรารี SweetAlert2 สำหรับแจ้งเตือนแบบสวยงาม -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
         .wrapper { max-width: 600px; width: 100%; display: flex; flex-direction: column; gap: 20px; }
         .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         h2, h3 { text-align: center; color: #333; margin-top: 0; }
         .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; color: #666; font-size: 0.9em; }
-        input[type="text"], select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        label { display: block; margin-bottom: 5px; color: #666; font-size: 0.9em; font-weight: bold;}
+        input[type="text"], select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-family: inherit;}
         .btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        button { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; }
+        button { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; font-family: inherit; font-size: 1em; transition: 0.3s;}
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
         .btn-borrow { background-color: #28a745; }
         .btn-return { background-color: #007bff; }
-        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; transform: none;}
         
         /* สไตล์สำหรับตาราง */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
@@ -78,19 +83,22 @@
 
 <script>
     // === นำ URL ของ Web App จาก Google Apps Script มาใส่ตรงนี้ ===
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbwZOBY6tuWd5jajef7cUCSVfknD6vWQ_TQmVhd4SKOB6S6ikX-FOt1jxXn9XRbyBLc/exec'; 
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxBebK9zO8Z-wnNcmJhTIjKLDj0qlBKu1P9bYawUTtMndWAMFBKml42s1bWYsSaHXPb/exec'; 
 
-    // ทำงานทันทีเมื่อเปิดหน้าเว็บ เพื่อดึงข้อมูลรายการที่ยืม
     window.onload = loadBorrowedItems;
 
-    // ฟังก์ชันยืม-คืนอุปกรณ์
     function submitForm(action) {
         const studentId = document.getElementById('studentId').value;
         const name = document.getElementById('name').value;
         const equipment = document.getElementById('equipment').value;
 
-        if (!studentId) return alert('กรุณากรอกรหัสนักเรียน');
-        if (action === 'borrow' && !name) return alert('กรุณากรอกชื่อ-นามสกุล');
+        // เปลี่ยนการแจ้งเตือนตอนกรอกข้อมูลไม่ครบให้ดูสวยงาม
+        if (!studentId) {
+            return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณากรอกรหัสนักเรียน' });
+        }
+        if (action === 'borrow' && !name) {
+            return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณากรอกชื่อ-นามสกุล' });
+        }
 
         toggleUI(true);
         document.getElementById('status-msg').innerText = "กำลังประมวลผล...";
@@ -106,21 +114,37 @@
         .then(result => {
             toggleUI(false);
             if (result === 'Success') {
-                alert(action === 'borrow' ? '✅ บันทึกการยืมสำเร็จ!' : '✅ บันทึกการคืนสำเร็จ!');
+                // แจ้งเตือนเมื่อสำเร็จ
+                Swal.fire({
+                    icon: 'success',
+                    title: 'สำเร็จ!',
+                    text: action === 'borrow' ? 'บันทึกการยืมเรียบร้อยแล้ว' : 'บันทึกการคืนเรียบร้อยแล้ว',
+                    confirmButtonColor: '#28a745'
+                });
+                
                 document.getElementById('studentId').value = '';
                 document.getElementById('name').value = '';
-                loadBorrowedItems(); // รีเฟรชตารางอัตโนมัติ
+                loadBorrowedItems(); 
             } else {
-                alert('❌ ไม่พบข้อมูลการยืม หรือคุณคืนไปแล้ว');
+                // แจ้งเตือนเมื่อหาข้อมูลไม่เจอ
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ผิดพลาด',
+                    text: 'ไม่พบข้อมูลการยืมของนักเรียนคนนี้ หรือคุณคืนอุปกรณ์ไปแล้ว',
+                    confirmButtonColor: '#d33'
+                });
             }
         })
         .catch(err => {
             toggleUI(false);
-            alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: 'ไม่สามารถเชื่อมต่อกับระบบได้ กรุณาลองใหม่อีกครั้ง'
+            });
         });
     }
 
-    // ฟังก์ชันดึงข้อมูลผู้ที่กำลังยืมอยู่
     function loadBorrowedItems() {
         document.getElementById('table-loading').style.display = 'block';
         document.getElementById('borrowed-table').style.display = 'none';
@@ -152,7 +176,6 @@
         });
     }
 
-    // ฟังก์ชันเปิด-ปิด ปุ่มเพื่อป้องกันการกดซ้ำ
     function toggleUI(isProcessing) {
         document.getElementById('btn-borrow').disabled = isProcessing;
         document.getElementById('btn-return').disabled = isProcessing;
