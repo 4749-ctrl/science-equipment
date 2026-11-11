@@ -267,8 +267,7 @@
         });
     }
 
-    // ระบบ Login ผู้ดูแลระบบ (ใช้ SweetAlert ใส่ PIN)
-    function loginAdmin() {
+   function loginAdmin() {
         if(adminPin) {
             Swal.fire({ title: 'ออกจากระบบไหม?', icon: 'question', showCancelButton: true })
             .then(res => { if(res.isConfirmed) { adminPin = null; renderTable(); Swal.fire('ออกจากระบบแล้ว','','success'); }});
@@ -283,9 +282,16 @@
             confirmButtonText: 'เข้าสู่ระบบ',
         }).then((result) => {
             if (result.isConfirmed) {
-                adminPin = result.value;
-                Swal.fire({icon: 'success', title: 'เปิดโหมดผู้ดูแล', text: 'ไปที่แท็บ "รออนุมัติ" เพื่อจัดการคำขอ', timer: 2000, showConfirmButton:false});
-                switchTab('pending');
+                // 👇 เพิ่มการตรวจสอบรหัสผ่านตรงนี้ 👇
+                if (result.value === "123456") { 
+                    adminPin = result.value;
+                    Swal.fire({icon: 'success', title: 'เปิดโหมดผู้ดูแล', text: 'ไปที่แท็บ "รออนุมัติ" เพื่อจัดการคำขอ', timer: 2000, showConfirmButton:false});
+                    switchTab('pending');
+                } else {
+                    // 👇 ถ้ารหัสผิด ให้แจ้งเตือน 👇
+                    Swal.fire('รหัสผ่านไม่ถูกต้อง', 'กรุณาลองใหม่อีกครั้ง', 'error');
+                }
+                // 👆 สิ้นสุดส่วนที่แก้ไข 👆
             }
         });
     }
